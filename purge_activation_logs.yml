@@ -1,38 +1,31 @@
 ---
-- name: Single-Step EDA Global Log Purge via Basic Auth
+# Scenario: Global retention purge. Queue deletion of logs older than the
+# configured number of days across all activations and orphaned processes.
+- name: Purge EDA logs older than a retention period
   hosts: localhost
   gather_facts: false
   vars:
     aap_hostname: "https://example.com"
-    aap_validate_certs: true 
-    retention_days: 14 
+    aap_validate_certs: true
+    retention_days: 14
 
   tasks:
-    - name: Calculate the ISO 8601 Cutoff Date via Pure Jinja Math
-      ansible.builtin.set_fact:
-        # 1. '%s' | strftime converts the current time to a Unix timestamp integer
-        # 2. We subtract the retention days converted to seconds (days * 86400)
-        # 3. The final outer strftime formats the result into the exact ISO 8601 string
-        cutoff_datetime: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime( ('%s' | strftime | int) - (retention_days | int * 86400) ) }}"
-
-    - name: Debug Output calculated Cutoff String
-      ansible.builtin.debug:
-        msg: "Calculated cutoff ISO timestamp is: {{ cutoff_datetime }}"
-
-    - name: Execute Global Admin Log Purge Request
+    - name: Queue global log purge
       ansible.builtin.uri:
         url: "{{ aap_hostname }}/api/eda/v1/logs/purge/"
         method: POST
-        status_code: 200
+        status_code: 202
         body_format: json
+        body:
+          retention_duration: "P{{ retention_days }}D"
+          audit_trail: true
         url_username: "{{ aap_username }}"
         url_password: "{{ aap_password }}"
         force_basic_auth: true
-        body:
-          before_date: "{{ cutoff_datetime }}"
         validate_certs: "{{ aap_validate_certs }}"
       register: purge_response
+      no_log: true
 
-    - name: Report Purge Job Status
+    - name: Report queued purge job
       ansible.builtin.debug:
-        msg: "EDA Log Purge executed successfully. Server Response Status: {{ purge_response.status }}"
+        msg: "EDA log purge queued. Job ID: {{ purge_response.json.job_id }}"

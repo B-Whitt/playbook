@@ -1,0 +1,35 @@
+---
+# Scenario: Purge logs older than one second for three activation names.
+# The API resolves each name and limits deletion to matching activations.
+- name: Purge logs for three EDA activation names
+  hosts: localhost
+  gather_facts: false
+  vars:
+    aap_hostname: "https://example.com"
+    aap_validate_certs: true
+    activation_names:  # Replace with three existing activation names.
+      - activation-one
+      - activation-two
+      - activation-three
+
+  tasks:
+    - name: Queue activation log purge
+      ansible.builtin.uri:
+        url: "{{ aap_hostname }}/api/eda/v1/logs/purge/"
+        method: POST
+        status_code: 202
+        body_format: json
+        body:
+          retention_duration: "PT1S"
+          activation_names: "{{ activation_names }}"
+          audit_trail: true
+        url_username: "{{ aap_username }}"
+        url_password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ aap_validate_certs }}"
+      register: purge_response
+      no_log: true
+
+    - name: Report queued purge job
+      ansible.builtin.debug:
+        msg: "EDA activation log purge queued. Job ID: {{ purge_response.json.job_id }}"

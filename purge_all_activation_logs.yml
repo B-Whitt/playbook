@@ -1,25 +1,30 @@
 ---
-- name: Single-Step EDA Global Log Purge all via Basic Auth
+# Scenario: Global purge with a one-second cutoff. The API requires a positive
+# retention duration, so logs from the most recent second do not qualify.
+- name: Purge global EDA logs older than one second
   hosts: localhost
   gather_facts: false
   vars:
     aap_hostname: "https://example.com"
-    aap_validate_certs: true 
+    aap_validate_certs: true
 
   tasks:
-    - name: Execute Global Admin Log Purge All Request
+    - name: Queue global log purge
       ansible.builtin.uri:
         url: "{{ aap_hostname }}/api/eda/v1/logs/purge/"
         method: POST
-        status_code: 200
+        status_code: 202
         body_format: json
-        body: {}
+        body:
+          retention_duration: "PT1S"
+          audit_trail: true
         url_username: "{{ aap_username }}"
         url_password: "{{ aap_password }}"
         force_basic_auth: true
         validate_certs: "{{ aap_validate_certs }}"
       register: purge_response
+      no_log: true
 
-    - name: Report Purge Job Status
+    - name: Report queued purge job
       ansible.builtin.debug:
-        msg: "EDA Log Purge executed successfully. Server Response Status: {{ purge_response.status }}"
+        msg: "EDA log purge queued. Job ID: {{ purge_response.json.job_id }}"
