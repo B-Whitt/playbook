@@ -7,7 +7,7 @@
   vars:
     aap_hostname: "https://example.com"
     aap_validate_certs: true
-    activation_id: 123  # Replace with an existing activation ID.
+    activation_id: 1  # Replace with an existing activation ID.
 
   tasks:
     - name: Queue activation log purge
