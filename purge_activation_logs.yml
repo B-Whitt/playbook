@@ -7,7 +7,6 @@
   vars:
     aap_hostname: "https://example.com"
     aap_validate_certs: true
-    retention_days: 1
 
   tasks:
     - name: Queue global log purge
@@ -17,7 +16,7 @@
         status_code: 202
         body_format: json
         body:
-          retention_duration: "P{{ retention_days }}D"
+          retention_duration: "PT5M"
           audit_trail: true
         url_username: "{{ aap_username }}"
         url_password: "{{ aap_password }}"
