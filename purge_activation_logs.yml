@@ -7,7 +7,7 @@
   vars:
     aap_hostname: "https://example.com"
     aap_validate_certs: true
-    retention_days: 14
+    retention_days: 1
 
   tasks:
     - name: Queue global log purge
@@ -24,7 +24,6 @@
         force_basic_auth: true
         validate_certs: "{{ aap_validate_certs }}"
       register: purge_response
-      no_log: true
 
     - name: Report queued purge job
       ansible.builtin.debug:
